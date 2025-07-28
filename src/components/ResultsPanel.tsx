@@ -5,10 +5,11 @@ import AnsiToHtml from 'ansi-to-html';
 interface ResultsPanelProps {
   isAnalyzing: boolean;
   report: string | null;
+  hasJsonReport: boolean;
   onDownload: () => void;
 }
 
-export const ResultsPanel = ({ isAnalyzing, report, onDownload }: ResultsPanelProps) => {
+export const ResultsPanel = ({ isAnalyzing, report, hasJsonReport, onDownload }: ResultsPanelProps) => {
   // Create ansi-to-html converter instance
   const ansiConverter = new AnsiToHtml({
     fg: '#fff',
@@ -26,11 +27,11 @@ export const ResultsPanel = ({ isAnalyzing, report, onDownload }: ResultsPanelPr
         <span className="text-sm font-medium text-muted-foreground">
           Analysis Results
         </span>
-        {report && (
+        {hasJsonReport && (
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onDownload()}
+            onClick={onDownload}
             className="h-7 text-xs"
           >
             <Code className="w-3 h-3 mr-1" />

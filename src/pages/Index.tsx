@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Header } from '@/components/Header';
 import { BashEditor } from '@/components/BashEditor';
 import { ResultsPanel } from '@/components/ResultsPanel';
-import { analyzeBashScript } from '@/utils/mockAnalysis';
+import { analyzeBashScript, AnalysisResult } from '@/utils/mockAnalysis';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -14,7 +14,7 @@ echo "Hello $name"
 eval "$name"
 `);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [report, setReport] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const { toast } = useToast();
 
   const handleAnalyze = async (scriptToAnalyze?: string) => {
@@ -23,9 +23,9 @@ eval "$name"
     
     setIsAnalyzing(true);
     try {
-      const analysisReport = await analyzeBashScript(currentScript);
-      setReport(analysisReport);
-      
+      const result = await analyzeBashScript(currentScript);
+      setAnalysisResult(result);
+
       toast({
         title: "Analysis Complete",
         description: "Script analysis completed successfully.",
@@ -43,11 +43,50 @@ eval "$name"
   };
 
   const handleDownload = () => {
-    // Mock download functionality
-    toast({
-      title: "Download Started",
-      description: `Downloading report in JSON format...`,
-    });
+    if (!analysisResult?.json_report) {
+      toast({
+        title: "No Report Available",
+        description: "Please analyze a script first to download the JSON report.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Parse the JSON report if it's a string, otherwise use as-is
+      let jsonData = analysisResult.json_report;
+      jsonData = JSON.parse(jsonData as string);
+      
+      // Create a blob with the properly formatted JSON data
+      const jsonString = JSON.stringify(jsonData, null, 4);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      
+      // Create a download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `bashguard-analysis-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+      
+      // Trigger the download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the URL object
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Download Complete",
+        description: "JSON analysis report has been downloaded successfully.",
+      });
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast({
+        title: "Download Failed",
+        description: "There was an error downloading the report. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
 
@@ -70,7 +109,10 @@ eval "$name"
           <div className="min-h-[250px]">
             <ResultsPanel
               isAnalyzing={isAnalyzing}
-              report={report}
+              report={analysisResult?.text_report || null}
+              hasJsonReport={!!(analysisResult?.json_report && 
+                (typeof analysisResult.json_report === 'object' || 
+                 (typeof analysisResult.json_report === 'string' && analysisResult.json_report.trim())))}
               onDownload={handleDownload}
             />
           </div>
