@@ -2,7 +2,7 @@
   "name": "vite_react_shadcn_ts",
   "private": true,
   "version": "0.0.0",
-  "homepage": "https://github.com/b3tameche/bashguard",
+  "homepage": "https://b3tameche.github.io/bashguard/",
   "type": "module",
   "scripts": {
     "dev": "vite",
